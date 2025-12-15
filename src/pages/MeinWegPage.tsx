@@ -92,7 +92,7 @@ const MeinWegPage = () => {
             {[
                 { id: "aupair", label: "Au Pair" },
                 { id: "fsj", label: "FSJ / BFD (Sosial)" },
-                { id: "foj", label: "FOJ (Lingkungan)" },
+                { id: "foj", label: "FÖJ (Lingkungan)" },
                 { id: "aus_general", label: "Ausbildung (Kerja)" },
                 { id: "studium", label: "Studium (Kuliah)" },
                 { id: "studienkolleg", label: "Studienkolleg" },

@@ -67,7 +67,7 @@ export const programs: Record<string, ProgramDetail> = {
   foj: {
     id: "foj",
     category: "social",
-    title: "FOJ (Lingkungan)",
+    title: "FÖJ (Lingkungan)",
     description: "Sukarelawan di bidang ekologi/alam (Hutan, Pertanian Organik, Konservasi Hewan).",
     salary: "€400 - €550/bulan",
     duration: "12 - 18 Bulan",
