@@ -178,7 +178,7 @@ const Header = () => {
               <DropdownMenuContent className="w-56 border-2 border-foreground bg-background shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] rounded-none mt-2">
                 
                 <DropdownMenuItem asChild className="focus:bg-accent focus:text-foreground cursor-pointer p-0">
-                  <Link to="/mein-weg" className="w-full font-bold py-3 px-2 flex items-center gap-2 bg-blue-50 text-blue-700">
+                  <Link to="/mein-weg" className="w-full font-bold py-3 px-2 flex items-center gap-2">
                     <MapIcon size={18} /> Program & Progress
                   </Link>
                 </DropdownMenuItem>

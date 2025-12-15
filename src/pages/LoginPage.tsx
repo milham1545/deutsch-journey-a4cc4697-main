@@ -44,7 +44,7 @@ const LoginPage = () => {
               <Input 
                 id="identifier" 
                 type="text" // Ganti type jadi text agar bisa input username
-                placeholder="Masukkan nama@email.com atau username" 
+                placeholder="Masukkan email atau username Anda" 
                 required 
                 value={identifier}
                 onChange={(e) => setIdentifier(e.target.value)}
