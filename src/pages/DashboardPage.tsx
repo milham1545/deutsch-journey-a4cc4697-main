@@ -14,7 +14,7 @@ import { Label } from "@/components/ui/label";
 import { 
   LogOut, BookOpen, Map as MapIcon, GraduationCap, Settings, 
   ExternalLink, CheckCircle2, History, Loader2, Eye, EyeOff, Dices, 
-  Check, X as XIcon, AlertCircle 
+  Check, X as XIcon, AlertCircle, ShieldCheck // <--- Tambah Icon ShieldCheck
 } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import {
@@ -33,7 +33,7 @@ import {
 } from "@/components/ui/alert-dialog";
 
 const DashboardPage = () => {
-  const { user, signOut, updateProfile, deleteAccount, loading } = useAuth(); // Ada deleteAccount
+  const { user, signOut, updateProfile, deleteAccount, loading } = useAuth(); 
   const { words } = useDictionary(); 
   const { getProgress } = useProgramProgress();
   const { activities, formatTimeAgo } = useActivityLog();
@@ -53,10 +53,35 @@ const DashboardPage = () => {
   // State Hapus Akun
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
+  // --- STATE ADMIN CHECK (BARU) ---
+  const [isAdmin, setIsAdmin] = useState(false);
+
   // --- STATE USERNAME CHECK ---
   const [usernameStatus, setUsernameStatus] = useState<"idle" | "checking" | "available" | "taken">("idle");
 
   const [viewProgram, setViewProgram] = useState("aupair");
+
+  // 1. CEK APAKAH USER ITU ADMIN? (LOGIKA BARU)
+  useEffect(() => {
+    const checkRole = async () => {
+      if (!user) return;
+      try {
+        const { data, error } = await supabase
+          .from("profiles")
+          .select("role")
+          .eq("id", user.id)
+          .single();
+
+        if (data?.role === "admin") {
+          setIsAdmin(true);
+        }
+      } catch (err) {
+        console.error("Gagal cek role", err);
+      }
+    };
+
+    checkRole();
+  }, [user]);
 
   // Load Data User saat Dialog Buka
   useEffect(() => {
@@ -67,7 +92,7 @@ const DashboardPage = () => {
       setTempAvatar(user.user_metadata.avatar_url || "");
       setEditPassword(""); 
       setUsernameStatus("idle");
-      setShowDeleteConfirm(false); // Reset status hapus
+      setShowDeleteConfirm(false); 
     }
   }, [user, openDialog]);
 
@@ -175,17 +200,25 @@ const DashboardPage = () => {
                 <div className="bg-white p-6 text-center flex flex-col items-center">
                   
                   <div className="relative mb-4">
-                     <Avatar className="w-32 h-32 border-4 border-foreground shadow-lg">
+                      <Avatar className="w-32 h-32 border-4 border-foreground shadow-lg">
                         <AvatarImage src={user.user_metadata.avatar_url} />
                         <AvatarFallback className="text-4xl font-black bg-yellow-400 text-black">
                             {user.email?.charAt(0).toUpperCase()}
                         </AvatarFallback>
-                     </Avatar>
+                      </Avatar>
                   </div>
                   
                   <h2 className="text-2xl font-black text-slate-900 uppercase">
                     {user.user_metadata.full_name || "User"}
                   </h2>
+                  
+                  {/* Badge Admin (Hanya hiasan visual kalau admin) */}
+                  {isAdmin && (
+                    <span className="mb-2 px-2 py-0.5 bg-red-100 text-red-600 border border-red-200 rounded text-[10px] font-black uppercase tracking-widest animate-pulse">
+                      ADMINISTRATOR
+                    </span>
+                  )}
+
                   <p className="text-slate-500 font-bold mb-1">@{user.user_metadata.username || "username"}</p>
                   <p className="text-slate-400 text-xs font-medium mb-2">{user.email}</p>
                   
@@ -194,7 +227,17 @@ const DashboardPage = () => {
                   </span>
 
                   <div className="w-full space-y-2">
-                     <Dialog open={openDialog} onOpenChange={setOpenDialog}>
+                      
+                      {/* --- TOMBOL RAHASIA ADMIN (DI SINI POSISINYA) --- */}
+                      {isAdmin && (
+                        <Link to="/admin">
+                            <Button className="w-full bg-slate-900 text-white hover:bg-slate-800 border-2 border-slate-900 shadow-sm font-bold mb-2">
+                                <ShieldCheck className="mr-2 h-4 w-4" /> ADMIN PANEL
+                            </Button>
+                        </Link>
+                      )}
+
+                      <Dialog open={openDialog} onOpenChange={setOpenDialog}>
                         <DialogTrigger asChild>
                             <Button variant="outline" className="w-full border-2 font-bold hover:bg-slate-50">
                                 <Settings className="w-4 h-4 mr-2"/> Edit Profile
@@ -229,7 +272,7 @@ const DashboardPage = () => {
                                     />
                                 </div>
 
-                                {/* EDIT USERNAME (BORDER FIX) */}
+                                {/* EDIT USERNAME */}
                                 <div className="space-y-1">
                                     <Label htmlFor="username" className="font-bold">Username</Label>
                                     <div className="relative">
@@ -240,17 +283,15 @@ const DashboardPage = () => {
                                             className={`font-bold border-2 pr-10 transition-all ${
                                                 usernameStatus === "available" ? "border-green-500 focus-visible:ring-green-500" :
                                                 usernameStatus === "taken" ? "border-red-500 focus-visible:ring-red-500" :
-                                                "" // Balik ke default jika idle
+                                                "" 
                                             }`}
                                         />
-                                        
                                         <div className="absolute right-3 top-1/2 -translate-y-1/2">
                                             {usernameStatus === "checking" && <Loader2 className="w-4 h-4 animate-spin text-slate-400"/>}
                                             {usernameStatus === "available" && <Check className="w-4 h-4 text-green-600"/>}
                                             {usernameStatus === "taken" && <XIcon className="w-4 h-4 text-red-600"/>}
                                         </div>
                                     </div>
-                                    
                                     {usernameStatus === "available" && <p className="text-xs font-bold text-green-600 flex items-center gap-1"><CheckCircle2 className="w-3 h-3"/> Username tersedia!</p>}
                                     {usernameStatus === "taken" && <p className="text-xs font-bold text-red-600 flex items-center gap-1"><AlertCircle className="w-3 h-3"/> Username sudah dipakai.</p>}
                                 </div>
@@ -293,7 +334,7 @@ const DashboardPage = () => {
                                     </div>
                                 </div>
 
-                                {/* ZONA BAHAYA: HAPUS AKUN (ALERT DIALOG) */}
+                                {/* ZONA BAHAYA: HAPUS AKUN */}
                                 <div className="pt-6 border-t border-slate-200 mt-4 flex flex-col items-center justify-center">
                                     <AlertDialog>
                                         <AlertDialogTrigger asChild>
@@ -343,15 +384,15 @@ const DashboardPage = () => {
                                 </Button>
                             </div>
                         </DialogContent>
-                     </Dialog>
-                     
-                     <Button 
+                      </Dialog>
+                      
+                      <Button 
                         variant="destructive" 
                         className="w-full font-bold border-2 border-black"
                         onClick={handleSignOut}
                     >
                         <LogOut className="w-4 h-4 mr-2" /> Keluar
-                     </Button>
+                      </Button>
                   </div>
                 </div>
               </CardContent>
@@ -419,8 +460,8 @@ const DashboardPage = () => {
 
             <Card className="border-4 border-foreground bg-white">
                 <CardHeader className="border-b-2 border-slate-100 bg-slate-50 flex flex-row items-center gap-2">
-                     <History className="w-5 h-5 text-slate-500"/>
-                     <CardTitle className="text-lg font-black">Aktivitas Terakhir</CardTitle>
+                      <History className="w-5 h-5 text-slate-500"/>
+                      <CardTitle className="text-lg font-black">Aktivitas Terakhir</CardTitle>
                 </CardHeader>
                 <CardContent className="p-0">
                     {activities.length > 0 ? (

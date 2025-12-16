@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
-import { levels as lessonData } from "@/data/lessons";
+// 1. Ganti Import: Gunakan fungsi DB
+import { getLevelsFromDB, Level } from "@/data/lessons";
 import { cn } from "@/lib/utils";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -91,6 +92,11 @@ type WeekPlan = {
 
 const PlannerPage = () => {
   const { toast } = useToast();
+  
+  // 2. State untuk Data Level dari DB
+  const [levels, setLevels] = useState<Level[]>([]);
+  const [loadingLevels, setLoadingLevels] = useState(true);
+
   const [selectedLevel, setSelectedLevel] = useState<string>("A1");
   const [durationMonths, setDurationMonths] = useState<number>(1);
   const [generatedPlan, setGeneratedPlan] = useState<WeekPlan[] | null>(null);
@@ -98,8 +104,18 @@ const PlannerPage = () => {
   const [quote, setQuote] = useState(MOTIVATIONAL_QUOTES[0]);
   const [isSettingsOpen, setIsSettingsOpen] = useState(true);
   
-  // State untuk Pop-up Reset
   const [showResetConfirm, setShowResetConfirm] = useState(false);
+
+  // 3. Fetch Data Level
+  useEffect(() => {
+    const fetchLevels = async () => {
+        setLoadingLevels(true);
+        const data = await getLevelsFromDB();
+        setLevels(data);
+        setLoadingLevels(false);
+    };
+    fetchLevels();
+  }, []);
 
   useEffect(() => {
     const savedPlan = localStorage.getItem("deutsch_planner_data");
@@ -138,8 +154,13 @@ const PlannerPage = () => {
   };
 
   const generatePlan = () => {
-    const levelData = lessonData.find((l) => l.id === selectedLevel);
-    if (!levelData) return;
+    // 4. Gunakan state 'levels' bukan import lama
+    const levelData = levels.find((l) => l.id === selectedLevel);
+    
+    if (!levelData) {
+        toast({ variant: "destructive", title: "Data Belum Siap", description: "Tunggu sebentar, sedang memuat data..." });
+        return;
+    }
 
     const modules = levelData.subSections;
     const totalWeeks = durationMonths * 4; 
@@ -152,9 +173,8 @@ const PlannerPage = () => {
     for (let week = 1; week <= totalWeeks; week++) {
       const weekDays: DailyTask[] = [];
       const startModuleIndex = Math.floor(currentModuleIndex);
-      // Ensure end index doesn't exceed array bounds and handles fractional steps
       let endModuleIndex = Math.floor(currentModuleIndex + modulesPerWeek);
-      // If it's the last week, ensure we include all remaining modules
+      
       if (week === totalWeeks) {
           endModuleIndex = modules.length;
       }
@@ -219,12 +239,10 @@ const PlannerPage = () => {
     }
   };
 
-  // Fungsi memicu popup
   const handleResetClick = () => {
     setShowResetConfirm(true);
   };
 
-  // Fungsi eksekusi reset
   const confirmReset = () => {
     setGeneratedPlan(null);
     setCompletedTasks({});
@@ -320,7 +338,14 @@ const PlannerPage = () => {
                         {getDurationText(durationMonths)}
                       </div>
                     </div>
-                    <Button onClick={generatePlan} size="lg" className="w-full font-black border-2 border-foreground shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] active:translate-y-1 active:shadow-none bg-green-500 hover:bg-green-600 text-white">GENERATE RENCANA</Button>
+                    <Button 
+                        onClick={generatePlan} 
+                        disabled={loadingLevels}
+                        size="lg" 
+                        className="w-full font-black border-2 border-foreground shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] active:translate-y-1 active:shadow-none bg-green-500 hover:bg-green-600 text-white"
+                    >
+                        {loadingLevels ? "MEMUAT DATA..." : "GENERATE RENCANA"}
+                    </Button>
                   </>
                 ) : (
                   <div className="space-y-4">
@@ -360,7 +385,6 @@ const PlannerPage = () => {
                     <AccordionTrigger className="px-6 py-4 hover:bg-accent/30 hover:no-underline">
                       <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4 w-full text-left">
                         <span className="bg-foreground text-background px-3 py-1 font-black rounded text-sm uppercase shrink-0 w-fit">Minggu {weekItem.week}</span>
-                        {/* Judul akan turun ke bawah jika panjang */}
                         <span className="font-bold text-lg leading-tight">{weekItem.focus}</span>
                       </div>
                     </AccordionTrigger>
@@ -398,7 +422,7 @@ const PlannerPage = () => {
                                     </span>
                                   </div>
 
-                                  {/* Instruksi Deep Dive (Tetap Ada) */}
+                                  {/* Instruksi Deep Dive */}
                                   {task.detail && !completedTasks[task.id] && (
                                     <p className="text-sm text-slate-600 mt-2 p-2 bg-white rounded border border-slate-200 flex gap-2">
                                       <Info className="w-4 h-4 text-blue-500 shrink-0 mt-0.5" />
