@@ -28,8 +28,8 @@ const Header = () => {
   const { user, signOut } = useAuth();
 
   const handleSignOut = async () => {
-    await signOut();
     setMobileMenuOpen(false);
+    await signOut();
     navigate("/login");
   };
 
